@@ -1,0 +1,53 @@
+---
+- name: Deploy Yii2 app on EC2
+  hosts: yii2_servers
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Ensure Docker service is running
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull latest Yii2 Docker image from DockerHub
+      community.docker.docker_image:
+        name: viveksharma754/yii2-app
+        source: pull
+        tag: latest
+
+    - name: Run or update Yii2 Docker container
+      community.docker.docker_container:
+        name: yii2app
+        image: viveksharma754/yii2-app:latest
+        state: started
+        restart_policy: always
+        published_ports:
+          - "8080:80"
+
