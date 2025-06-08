@@ -1,5 +1,5 @@
 ---
-- name: Deploy Yii2 app on EC2
+- name: Deploy Yii2 app on EC2 using Docker Swarm
   hosts: yii2_servers
   become: true
 
@@ -19,13 +19,13 @@
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add Docker repo
+    - name: Add Docker repository
       apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
         state: present
         update_cache: yes
 
-    - name: Install Docker
+    - name: Install Docker CE
       apt:
         name: docker-ce
         state: present
@@ -36,18 +36,29 @@
         state: started
         enabled: yes
 
-    - name: Pull latest Yii2 Docker image from DockerHub
-      community.docker.docker_image:
-        name: viveksharma754/yii2-app
-        source: pull
-        tag: latest
+    - name: Initialize Docker Swarm (if not already)
+      shell: |
+        docker info | grep -q 'Swarm: active' || docker swarm init
+      changed_when: false
 
-    - name: Run or update Yii2 Docker container
-      community.docker.docker_container:
-        name: yii2app
-        image: viveksharma754/yii2-app:latest
-        state: started
-        restart_policy: always
-        published_ports:
-          - "8080:80"
+    - name: Create stack.yml file
+      copy:
+        dest: /home/ubuntu/stack.yml
+        content: |
+          version: "3.8"
+          services:
+            yii2app:
+              image: viveksharma754/yii2-app:latest
+              ports:
+                - "8081:80"
+              restart: always
 
+    - name: Deploy Yii2 app using Docker Stack
+      shell: docker stack deploy -c /home/ubuntu/stack.yml yii2app
+
+    - name: Wait for container to be up
+      shell: docker service ls | grep yii2app
+      register: service_status
+      retries: 5
+      delay: 5
+      until: service_status.rc == 0
