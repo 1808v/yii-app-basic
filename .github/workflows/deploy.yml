@@ -3,7 +3,7 @@ name: Deploy Yii2 App using Ansible
 on:
   push:
     branches:
-      - main
+      - master
 
 permissions:
   contents: read
