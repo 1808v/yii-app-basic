@@ -1,4 +1,4 @@
-name: Deploy Yii2 App
+name: Deploy Yii2 App using Ansible
 
 on:
   push:
@@ -6,28 +6,29 @@ on:
       - master
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        run: docker build -t viveksharma754/yii2-app .
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Login to DockerHub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
 
-      - name: Push Docker Image
-        run: docker push viveksharma754/yii2-app
-
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            docker pull viveksharma754/yii2-app
-            docker stack deploy -c ~/stack.yml yii2
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook playbook1.yml \
+            -i host.ini \
+            --private-key ~/.ssh/id_rsa \
+            -u ${{ secrets.EC2_USER }} \
+            -e ansible_python_interpreter=/usr/bin/python3
