@@ -27,7 +27,7 @@ jobs:
         run: docker push ${{ secrets.DOCKER_USERNAME }}/yii2-app:latest
 
       - name: Deploy on EC2 using Docker Swarm
-        uses: appleboy/ssh-action@v3
+        uses: actions/checkout@v4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
