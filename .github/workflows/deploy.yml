@@ -20,15 +20,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Install Ansible
+      - name: Run Ansible Playbook on EC2
         run: |
-          sudo apt update
-          sudo apt install -y ansible
-
-      - name: Run Ansible Playbook
-        run: |
-          ansible-playbook playbook1.yml \
-            -i host.ini \
-            --private-key ~/.ssh/id_rsa \
-            -u "${{ secrets.EC2_USER }}" \
-            -e ansible_python_interpreter=/usr/bin/python3
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ubuntu/yii2-app-basic
+            ansible-playbook playbook1.yml \
+              -i host.ini \
+              -u ubuntu \
+              -e ansible_python_interpreter=/usr/bin/python3
+          EOF
