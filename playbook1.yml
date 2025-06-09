@@ -3,17 +3,12 @@
   hosts: yii2_servers
   become: true
 
+  pre_tasks:
+    - name: Remove existing yii2app service if it exists
+      command: docker service rm yii2app
+      ignore_errors: yes
+
   tasks:
-      - name: Check current working directory
-      shell: pwd
-      args:
-        chdir: /home/ubuntu/yii2-app-basic
-      register: working_dir_output
-
-    - name: Print working directory
-      debug:
-        var: working_dir_output.stdout
-
     - name: Install required packages
       apt:
         name:
@@ -29,13 +24,13 @@
         url: https://download.docker.com/linux/ubuntu/gpg
         state: present
 
-    - name: Add Docker repository
+    - name: Add Docker repo
       apt_repository:
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
         state: present
         update_cache: yes
 
-    - name: Install Docker CE
+    - name: Install Docker
       apt:
         name: docker-ce
         state: present
@@ -45,30 +40,25 @@
         name: docker
         state: started
         enabled: yes
-      
+
     - name: Initialize Docker Swarm (if not already)
-      shell: |
-        docker info | grep -q 'Swarm: active' || docker swarm init
-      changed_when: false
+      command: docker swarm init
+      register: swarm_init_output
+      failed_when: "'Error response from daemon: This node is already part of a swarm' not in swarm_init_output.stderr"
+      ignore_errors: yes
 
-    - name: Create stack.yml file
-      copy:
-        dest: /home/ubuntu/yii2-app-basic/stack.yml
-        content: |
-          version: "3.8"
-          services:
-            yii2app:
-              image: viveksharma754/yii2-app:latest
-              ports:
-                - "8081:80"
-              restart: always
+    - name: Pull Yii2 image (optional since Swarm pulls automatically)
+      community.docker.docker_image:
+        name: princeashok/yii2-app
+        source: pull
+        tag: latest
 
-    - name: Deploy Yii2 app using Docker Stack
-      shell: docker stack deploy -c /home/ubuntu/yii2-app-basic/stack.yml yii2app
-
-    - name: Wait for container to be up
-      shell: docker service ls | grep yii2app
-      register: service_status
-      retries: 5
-      delay: 5
-      until: service_status.rc == 0
+    - name: Deploy Yii2 app as a Docker Swarm service
+      command: >
+        docker service create
+        --name yii2app
+        --publish 8081:80
+        --replicas 1
+        princeashok/yii2-app:latest
+      args:
+        creates: /var/lib/docker/swarm  # prevents re-running on every play
