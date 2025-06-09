@@ -50,16 +50,6 @@
       shell: |
         docker info | grep -q 'Swarm: active' || docker swarm init
       changed_when: false
-      
-      - name: Check current working directory
-      shell: pwd
-      args:
-        chdir: /home/ubuntu/yii2-app-basic
-      register: working_dir_output
-
-    - name: Print working directory
-      debug:
-        var: working_dir_output.stdout
 
     - name: Create stack.yml file
       copy:
