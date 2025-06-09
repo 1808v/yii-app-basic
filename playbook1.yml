@@ -24,6 +24,9 @@
         repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
         state: present
         update_cache: yes
+        
+    - name: Deploy Yii2 app using Docker Stack
+      shell: pwd
 
     - name: Install Docker CE
       apt:
@@ -36,10 +39,16 @@
         state: started
         enabled: yes
 
+    - name: Deploy Yii2 app using Docker Stack
+      shell: pwd
+      
     - name: Initialize Docker Swarm (if not already)
       shell: |
         docker info | grep -q 'Swarm: active' || docker swarm init
       changed_when: false
+
+    - name: Deploy Yii2 app using Docker Stack
+      shell: pwd
 
     - name: Create stack.yml file
       copy:
