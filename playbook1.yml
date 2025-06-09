@@ -42,14 +42,24 @@
         enabled: yes
 
     - name: Initialize Docker Swarm (if not already)
-      command: docker swarm init
-      register: swarm_init_output
-      failed_when: "'Error response from daemon: This node is already part of a swarm' not in swarm_init_output.stderr"
-      ignore_errors: yes
+      shell: |
+        if ! docker info | grep -q "Swarm: active"; then
+          docker swarm init --advertise-addr {{ ansible_host }}
+        else
+          echo "Swarm already active"
+        fi
+      register: swarm_init_result
+      changed_when: "'Swarm initialized' in swarm_init_result.stdout"
+      failed_when: false
+
+    - name: Login to Docker Hub
+      community.docker.docker_login:
+        username: "{{ lookup('env','DOCKER_USERNAME') }}"
+        password: "{{ lookup('env','DOCKER_PASSWORD') }}"
 
     - name: Pull Yii2 image (optional since Swarm pulls automatically)
       community.docker.docker_image:
-        name: princeashok/yii2-app
+        name: viveksharma754/yii2-app
         source: pull
         tag: latest
 
@@ -59,6 +69,6 @@
         --name yii2app
         --publish 8081:80
         --replicas 1
-        princeashok/yii2-app:latest
+        viveksharma754/yii2-app:latest
       args:
-        creates: /var/lib/docker/swarm  # prevents re-running on every play
+        creates: /var/lib/docker/swarm
