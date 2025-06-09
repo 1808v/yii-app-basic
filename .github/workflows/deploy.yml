@@ -28,7 +28,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: viveksharma754/yii2-app:latest
+          tags: viveksharma754/yii2-app:app
 
       - name: Set up SSH key
         run: |

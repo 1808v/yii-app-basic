@@ -14,7 +14,7 @@
 
     - debug:
         var: service_check.stdout_lines
-        
+
   tasks:
     - name: Install required packages
       apt:
@@ -68,7 +68,7 @@
       community.docker.docker_image:
         name: viveksharma754/yii2-app
         source: pull
-        tag: latest
+        tag: app
 
     - name: Deploy Yii2 app as a Docker Swarm service
       command: >
@@ -76,6 +76,6 @@
         --name yii2app
         --publish 8081:80
         --replicas 1
-        viveksharma754/yii2-app:latest
+        viveksharma754/yii2-app:app
       args:
         creates: /var/lib/docker/swarm
