@@ -43,7 +43,7 @@
 
     - name: Create stack.yml file
       copy:
-        dest: /home/ubuntu/stack.yml
+        dest: /home/ubuntu/yii2-app-basic/stack.yml
         content: |
           version: "3.8"
           services:
@@ -54,7 +54,7 @@
               restart: always
 
     - name: Deploy Yii2 app using Docker Stack
-      shell: docker stack deploy -c /home/ubuntu/stack.yml yii2app
+      shell: docker stack deploy -c /home/ubuntu/yii2-app-basic/stack.yml yii2app
 
     - name: Wait for container to be up
       shell: docker service ls | grep yii2app
