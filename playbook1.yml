@@ -8,6 +8,13 @@
       command: docker service rm yii2app
       ignore_errors: yes
 
+    - name: Check if yii2app service still exists
+      command: docker service ls --filter name=yii2app --format '{{.Name}}'
+      register: service_check
+
+    - debug:
+        var: service_check.stdout_lines
+        
   tasks:
     - name: Install required packages
       apt:
